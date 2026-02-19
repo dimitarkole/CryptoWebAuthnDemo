@@ -1,0 +1,58 @@
+﻿@{
+    ViewData["Title"] = "Register WebAuthn";
+}
+
+<h2>Register WebAuthn</h2>
+
+<div>
+    <label>Username:</label>
+    <input id="username" type="text" />
+</div>
+<div>
+    <label>Display Name:</label>
+    <input id="displayName" type="text" />
+</div>
+<button id="registerBtn">Register</button>
+
+<script>
+    document.getElementById('registerBtn').addEventListener('click', async () => {
+        const username = document.getElementById('username').value;
+        const displayName = document.getElementById('displayName').value;
+
+        // 1️⃣ Get registration options from server
+        const optionsResponse = await fetch('/Register/Options', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userName: username, displayName })
+        });
+
+        const options = await optionsResponse.json();
+
+        // Decode challenge and user.id from base64url
+        options.challenge = Uint8Array.from(atob(options.challenge.replace(/_/g, '/').replace(/-/g, '+')), c => c.charCodeAt(0));
+        options.user.id = Uint8Array.from(atob(options.user.id.replace(/_/g, '/').replace(/-/g, '+')), c => c.charCodeAt(0));
+
+        // 2️⃣ Call WebAuthn API
+        const credential = await navigator.credentials.create({ publicKey: options });
+
+        // 3️⃣ Send attestation to server
+        const attestation = {
+            id: credential.id,
+            rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+            type: credential.type,
+            response: {
+                clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(credential.response.clientDataJSON))),
+                attestationObject: btoa(String.fromCharCode(...new Uint8Array(credential.response.attestationObject)))
+            }
+        };
+
+        const completeResponse = await fetch('/Register/Complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(attestation)
+        });
+
+        const result = await completeResponse.json();
+        alert('Registration success! Credential ID: ' + result.id);
+    });
+</script>

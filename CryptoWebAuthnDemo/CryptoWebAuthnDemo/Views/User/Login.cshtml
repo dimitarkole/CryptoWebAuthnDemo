@@ -1,0 +1,59 @@
+﻿@{
+    ViewData["Title"] = "Login WebAuthn";
+}
+
+<h2>Login WebAuthn</h2>
+
+<div>
+    <label>Username:</label>
+    <input id="username" type="text" />
+</div>
+<button id="loginBtn">Login</button>
+
+<script>
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+        const username = document.getElementById('username').value;
+
+        // 1️⃣ Get assertion options from server
+        const optionsResponse = await fetch('/auth/login/options', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userName: username })
+        });
+        const options = await optionsResponse.json();
+
+        options.challenge = Uint8Array.from(atob(options.challenge.replace(/_/g, '/').replace(/-/g, '+')), c => c.charCodeAt(0));
+        options.allowCredentials = options.allowCredentials.map(c => {
+            return {
+                ...c,
+                id: Uint8Array.from(atob(c.id.replace(/_/g, '/').replace(/-/g, '+')), d => d.charCodeAt(0))
+            };
+        });
+
+        // 2️⃣ Call WebAuthn API
+        const assertion = await navigator.credentials.get({ publicKey: options });
+
+        // 3️⃣ Send assertion to server
+        const authData = {
+            id: assertion.id,
+            rawId: btoa(String.fromCharCode(...new Uint8Array(assertion.rawId))),
+            type: assertion.type,
+            response: {
+                clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(assertion.response.clientDataJSON))),
+                authenticatorData: btoa(String.fromCharCode(...new Uint8Array(assertion.response.authenticatorData))),
+                signature: btoa(String.fromCharCode(...new Uint8Array(assertion.response.signature))),
+                userHandle: assertion.response.userHandle ? btoa(String.fromCharCode(...new Uint8Array(assertion.response.userHandle))) : null
+            }
+        };
+
+        const completeResponse = await fetch('/api/auth/login/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(authData)
+        });
+
+        const result = await completeResponse.json();
+        if (result.success) alert('Login success!');
+        else alert('Login failed!');
+    });
+</script>

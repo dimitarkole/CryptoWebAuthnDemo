@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <CodeAnalysisRuleSet>..\..\Rules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="..\..\stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.1" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="all">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CryptoWebAuthnManager.Common\CryptoWebAuthnManager.Common.csproj" />
+    <ProjectReference Include="..\..\Data\CryptoWebAuthnManager.Data.Common\CryptoWebAuthnManager.Data.Common.csproj" />
+    <ProjectReference Include="..\..\Data\CryptoWebAuthnManager.Data.Models\CryptoWebAuthnManager.Data.Models.csproj" />
+    <ProjectReference Include="..\..\Data\CryptoWebAuthnManager.Data\CryptoWebAuthnManager.Data.csproj" />
+    <ProjectReference Include="..\..\Services\CryptoWebAuthnManager.Services.Data\CryptoWebAuthnManager.Services.Data.csproj" />
+    <ProjectReference Include="..\..\Services\CryptoWebAuthnManager.Services.Mapping\CryptoWebAuthnManager.Services.Mapping.csproj" />
+    <ProjectReference Include="..\..\Services\CryptoWebAuthnManager.Services.Messaging\CryptoWebAuthnManager.Services.Messaging.csproj" />
+    <ProjectReference Include="..\..\Services\CryptoWebAuthnManager.Services\CryptoWebAuthnManager.Services.csproj" />
+  </ItemGroup>
+
+</Project>

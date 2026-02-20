@@ -1,5 +1,13 @@
 ﻿namespace CryptoWebAuthnManager.Services.Data
 {
+    using CryptoWebAuthnManager.Data;
+    using CryptoWebAuthnManager.Data.Common.Repositories;
+    using CryptoWebAuthnManager.Data.Models;
+    using Fido2NetLib;
+    using Fido2NetLib.Objects;
+    using Microsoft.AspNetCore.Identity;
+    using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Options;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -9,32 +17,15 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    using CryptoWebAuthnManager.Data.Common.Repositories;
-    using CryptoWebAuthnManager.Data.Models;
-    using Fido2NetLib;
-    using Fido2NetLib.Objects;
-    using Microsoft.AspNetCore.Identity;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Options;
-
     public class WebAuthnService : IWebAuthnService
     {
-        private readonly Fido2 _fido2;
-        private readonly IRepository<WebAuthnCredential> credentialsRepo;
+        private readonly IFido2 _fido2;
+        private readonly ApplicationDbContext context;
 
-        public WebAuthnService(
-            IConfiguration config,
-            IRepository<WebAuthnCredential> credentialsRepo)
+        public WebAuthnService(ApplicationDbContext context, IFido2 fido2)
         {
-            var fidoConfig = new Fido2Configuration
-            {
-                ServerDomain = config["Fido:ServerDomain"],
-                ServerName = config["Fido:ServerName"],
-                Origins = new HashSet<string> { config["Fido:Origin"] }
-            };
-
-            this._fido2 = new Fido2(fidoConfig);
-            this.credentialsRepo = credentialsRepo;
+            this.context = context;
+            this._fido2 = fido2;
         }
 
         public async Task<CredentialCreateOptions> GenerateRegistrationOptionsAsync(string userId, string username)
@@ -62,8 +53,7 @@
             // Callback за уникалност
             async Task<bool> Callback(IsCredentialIdUniqueToUserParams args, CancellationToken ct)
             {
-                var exists = credentialsRepo
-                    .All()
+                var exists = context.WebAuthnCredentials
                     .Any(c => c.CredentialId.SequenceEqual(args.CredentialId));
 
                 return !exists;
@@ -88,8 +78,8 @@
                 CreatedOn = DateTime.UtcNow
             };
 
-            await credentialsRepo.AddAsync(credential);
-            await credentialsRepo.SaveChangesAsync();
+            await this.context.WebAuthnCredentials.AddAsync(credential);
+            await this.context.SaveChangesAsync();
 
             return true;
         }

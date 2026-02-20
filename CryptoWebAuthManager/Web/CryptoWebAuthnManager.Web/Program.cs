@@ -75,7 +75,7 @@
 
             // Application services
             services.AddTransient<IEmailSender, NullMessageSender>();
-            services.AddTransient<ISettingsService, SettingsService>();
+            services.AddTransient<IWebAuthnService, WebAuthnService>();
         }
 
         private static void Configure(WebApplication app)
@@ -88,7 +88,7 @@
                 new ApplicationDbContextSeeder().SeedAsync(dbContext, serviceScope.ServiceProvider).GetAwaiter().GetResult();
             }
 
-            MappingConfig.RegisterMappings(typeof(ErrorViewModel).GetTypeInfo().Assembly);
+            AutoMapperConfig.RegisterMappings(typeof(ErrorViewModel).GetTypeInfo().Assembly);
 
             if (app.Environment.IsDevelopment())
             {

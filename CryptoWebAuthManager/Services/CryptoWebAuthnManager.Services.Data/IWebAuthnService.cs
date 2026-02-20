@@ -10,6 +10,6 @@
     public interface IWebAuthnService
     {
         Task<CredentialCreateOptions> GenerateRegistrationOptionsAsync(string userId, string username);
-        Task<bool> CompleteRegistrationAsync(string userId, AuthenticatorAttestationRawResponse attestationResponse, CredentialCreateOptions originalOptions)
+        Task<bool> CompleteRegistrationAsync(string userId, AuthenticatorAttestationRawResponse attestationResponse, CredentialCreateOptions originalOptions);
     }
 }

@@ -1,9 +1,9 @@
 ﻿namespace CryptoWebAuthnManager.Services.Mapping
 {
-    using Mapster;
+    using AutoMapper;
 
     public interface IHaveCustomMappings
     {
-        void CreateMappings(TypeAdapterConfig configuration);
+        void CreateMappings(IProfileExpression configuration);
     }
 }

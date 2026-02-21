@@ -4,8 +4,8 @@ using System.Text;
 
 namespace CryptoWebAuthnManager.Web.ViewModels.WebAuthnModels
 {
-    public class TestModel
+    public class LoginRequestModel
     {
-        public string Test { get; set; }
+        public string Username { get; set; }
     }
 }

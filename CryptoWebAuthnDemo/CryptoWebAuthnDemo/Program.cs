@@ -10,6 +10,8 @@ namespace CryptoWebAuthnDemo
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Services.AddControllers();  // нужно за Controller базирани API
+
             // Add services to the container.
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -34,13 +36,11 @@ namespace CryptoWebAuthnDemo
             builder.Services.AddSingleton<Fido2NetLib.Fido2>(new Fido2NetLib.Fido2(new Fido2NetLib.Fido2Configuration
             {
                 ServerName = "Demo WebAuthn API",
-                Origin = "https://localhost:7112"
             }));
 
-
-
             var app = builder.Build();
-
+            app.MapControllers();                // нужно за Route атрибутите
+            app.Run();
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {

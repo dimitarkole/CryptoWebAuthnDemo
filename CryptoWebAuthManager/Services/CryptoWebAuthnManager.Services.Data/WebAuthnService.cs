@@ -19,10 +19,10 @@
 
     public class WebAuthnService : IWebAuthnService
     {
-        private readonly IFido2 _fido2;
+        private readonly Fido2 _fido2;
         private readonly ApplicationDbContext context;
 
-        public WebAuthnService(ApplicationDbContext context, IFido2 fido2)
+        public WebAuthnService(ApplicationDbContext context, Fido2 fido2)
         {
             this.context = context;
             this._fido2 = fido2;
@@ -30,18 +30,41 @@
 
         public async Task<CredentialCreateOptions> GenerateRegistrationOptionsAsync(string userId, string username)
         {
+            // 1️⃣ Генерираме user.Id с минимум 16 байта
+            byte[] userIdBytes = Encoding.UTF8.GetBytes(userId);
+            if (userIdBytes.Length < 16)
+            {
+                // padding, ако е по-малко от 16
+                var padded = new byte[16];
+                Array.Copy(userIdBytes, padded, userIdBytes.Length);
+                userIdBytes = padded;
+            }
+
             var user = new Fido2User
             {
                 DisplayName = username,
                 Name = username,
-                Id = Encoding.UTF8.GetBytes(userId)
+                Id = userIdBytes
             };
 
-            var requestNewCredentialParams = new RequestNewCredentialParams()
+            // 2️⃣ Параметри за нов credential
+            var requestNewCredentialParams = new RequestNewCredentialParams
             {
                 User = user,
+                AuthenticatorSelection = new AuthenticatorSelection
+                {
+                    RequireResidentKey = false,
+                    UserVerification = UserVerificationRequirement.Preferred
+                },
+                AttestationPreference = AttestationConveyancePreference.None,
+                PubKeyCredParams = new List<PubKeyCredParam>
+                {
+                    new PubKeyCredParam(COSE.Algorithm.ES256,PublicKeyCredentialType.PublicKey),
+                    new PubKeyCredParam(COSE.Algorithm.RS256,PublicKeyCredentialType.PublicKey),
+                },
             };
 
+            // 3️⃣ Създаваме CredentialCreateOptions
             return _fido2.RequestNewCredential(requestNewCredentialParams);
         }
 

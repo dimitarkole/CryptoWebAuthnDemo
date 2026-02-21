@@ -16,12 +16,12 @@
 
     public class WebAuthnServiceTests : BaseTestClass
     {
-        private readonly Mock<IFido2> _fido2Mock;
+        private readonly Mock<Fido2> _fido2Mock;
         private readonly WebAuthnService _service;
 
         public WebAuthnServiceTests()
         {
-            _fido2Mock = new Mock<IFido2>();
+            _fido2Mock = new Mock<Fido2>();
             _service = new WebAuthnService(context, _fido2Mock.Object);
         }
 

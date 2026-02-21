@@ -23,6 +23,7 @@
     <ProjectReference Include="..\..\Data\CryptoWebAuthnManager.Data.Common\CryptoWebAuthnManager.Data.Common.csproj" />
     <ProjectReference Include="..\..\Data\CryptoWebAuthnManager.Data.Models\CryptoWebAuthnManager.Data.Models.csproj" />
     <ProjectReference Include="..\..\Data\CryptoWebAuthnManager.Data\CryptoWebAuthnManager.Data.csproj" />
+    <ProjectReference Include="..\..\Web\CryptoWebAuthnManager.Web.ViewModels\CryptoWebAuthnManager.Web.ViewModels.csproj" />
     <ProjectReference Include="..\CryptoWebAuthnManager.Services.Mapping\CryptoWebAuthnManager.Services.Mapping.csproj" />
   </ItemGroup>
 

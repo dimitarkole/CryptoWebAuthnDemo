@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Fido2" Version="4.0.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="all">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
@@ -21,6 +22,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Data\CryptoWebAuthnManager.Data.Common\CryptoWebAuthnManager.Data.Common.csproj" />
     <ProjectReference Include="..\..\Data\CryptoWebAuthnManager.Data.Models\CryptoWebAuthnManager.Data.Models.csproj" />
+    <ProjectReference Include="..\..\Data\CryptoWebAuthnManager.Data\CryptoWebAuthnManager.Data.csproj" />
+    <ProjectReference Include="..\..\Web\CryptoWebAuthnManager.Web.ViewModels\CryptoWebAuthnManager.Web.ViewModels.csproj" />
     <ProjectReference Include="..\CryptoWebAuthnManager.Services.Mapping\CryptoWebAuthnManager.Services.Mapping.csproj" />
   </ItemGroup>
 

@@ -2,19 +2,33 @@
 {
     using System;
     using System.Linq;
-
-    using Mapster;
+    using System.Linq.Expressions;
+    using AutoMapper.QueryableExtensions;
 
     public static class QueryableMappingExtensions
     {
-        public static IQueryable<TDestination> To<TDestination>(this IQueryable source)
+        public static IQueryable<TDestination> To<TDestination>(
+            this IQueryable source,
+            params Expression<Func<TDestination, object>>[] membersToExpand)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            return source.ProjectToType<TDestination>(MappingConfig.GlobalConfig);
+            return source.ProjectTo(membersToExpand);
+        }
+
+        public static IQueryable<TDestination> To<TDestination>(
+            this IQueryable source,
+            object parameters)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            return source.ProjectTo<TDestination>(parameters);
         }
     }
 }

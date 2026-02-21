@@ -4,6 +4,7 @@ using CryptoWebAuthnManager.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CryptoWebAuthnManager.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260219183630_Initial")]
+    partial class Initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -180,9 +183,6 @@ namespace CryptoWebAuthnManager.Data.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("ApplicationUserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
@@ -211,8 +211,6 @@ namespace CryptoWebAuthnManager.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("IsDeleted");
 
@@ -325,13 +323,6 @@ namespace CryptoWebAuthnManager.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("CryptoWebAuthnManager.Data.Models.WebAuthnCredential", b =>
-                {
-                    b.HasOne("CryptoWebAuthnManager.Data.Models.ApplicationUser", null)
-                        .WithMany("WebAuthnCredentials")
-                        .HasForeignKey("ApplicationUserId");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("CryptoWebAuthnManager.Data.Models.ApplicationRole", null)
@@ -390,8 +381,6 @@ namespace CryptoWebAuthnManager.Data.Migrations
                     b.Navigation("Logins");
 
                     b.Navigation("Roles");
-
-                    b.Navigation("WebAuthnCredentials");
                 });
 #pragma warning restore 612, 618
         }

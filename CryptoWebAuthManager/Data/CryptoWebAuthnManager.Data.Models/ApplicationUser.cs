@@ -16,6 +16,7 @@ namespace CryptoWebAuthnManager.Data.Models
             this.Roles = new HashSet<IdentityUserRole<string>>();
             this.Claims = new HashSet<IdentityUserClaim<string>>();
             this.Logins = new HashSet<IdentityUserLogin<string>>();
+            this.WebAuthnCredentials = new HashSet<WebAuthnCredential>();
         }
 
         // Audit info
@@ -33,5 +34,6 @@ namespace CryptoWebAuthnManager.Data.Models
         public virtual ICollection<IdentityUserClaim<string>> Claims { get; set; }
 
         public virtual ICollection<IdentityUserLogin<string>> Logins { get; set; }
+        public virtual ICollection<WebAuthnCredential> WebAuthnCredentials { get; set; }
     }
 }

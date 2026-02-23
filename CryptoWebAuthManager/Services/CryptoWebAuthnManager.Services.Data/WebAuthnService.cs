@@ -44,7 +44,6 @@
                 Id = userIdBytes
             };
 
-            // 2️⃣ Параметри за нов credential
             var requestNewCredentialParams = new RequestNewCredentialParams
             {
                 User = user,
@@ -61,7 +60,6 @@
                 },
             };
 
-            // 3️⃣ Създаваме CredentialCreateOptions
             return _fido2.RequestNewCredential(requestNewCredentialParams);
         }
 
@@ -169,10 +167,7 @@
                 }
             };
 
-            // 4️⃣ извършваме проверката
             var result = await _fido2.MakeAssertionAsync(makeAssertionParams);
-
-            // 5️⃣ update counter (МНОГО ВАЖНО)
             c.SignatureCounter = result.SignCount;
             context.SaveChanges();
 

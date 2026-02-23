@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Fido2" Version="4.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageReference Include="Moq" Version="4.20.72" />
@@ -29,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Data\CryptoWebAuthnManager.Data\CryptoWebAuthnManager.Data.csproj" />
     <ProjectReference Include="..\..\Services\CryptoWebAuthnManager.Services.Data\CryptoWebAuthnManager.Services.Data.csproj" />
+    <ProjectReference Include="..\..\Web\CryptoWebAuthnManager.Web.ViewModels\CryptoWebAuthnManager.Web.ViewModels.csproj" />
   </ItemGroup>
 
 </Project>

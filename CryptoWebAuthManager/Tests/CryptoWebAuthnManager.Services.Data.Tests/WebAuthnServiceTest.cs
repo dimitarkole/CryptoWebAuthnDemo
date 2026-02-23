@@ -5,8 +5,10 @@
     using CryptoWebAuthnManager.Data.Models;
     using Fido2NetLib;
     using Fido2NetLib.Objects;
+    using Microsoft.EntityFrameworkCore;
     using Moq;
     using System;
+    using System.Buffers.Text;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
@@ -16,108 +18,196 @@
 
     public class WebAuthnServiceTests : BaseTestClass
     {
-        private readonly Mock<Fido2> _fido2Mock;
-        private readonly WebAuthnService _service;
-
-        public WebAuthnServiceTests()
-        {
-            _fido2Mock = new Mock<Fido2>();
-            _service = new WebAuthnService(context, _fido2Mock.Object);
-        }
-
         [Fact]
-        public async Task GenerateRegistrationOptionsAsync_Should_Create_Correct_User_And_Call_Fido()
+        public async Task GenerateRegistrationOptionsAsync_Should_Return_Valid_Options()
         {
-            var userId = "123";
+            // Arrange
+            var service = CreateService();
+            var userId = "12345";
             var username = "dimitar";
-            var expectedOptions = CreateValidCredentialCreateOptions(userId, username);
-
-            _fido2Mock
-                .Setup(x => x.RequestNewCredential(It.IsAny<RequestNewCredentialParams>()))
-                .Returns(expectedOptions);
 
             // Act
-            var result = await _service.GenerateRegistrationOptionsAsync(userId, username);
+            var result = await service.GenerateRegistrationOptionsAsync(userId, username);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(expectedOptions, result);
+            Assert.NotNull(result.User);
+            Assert.Equal(username, result.User.Name);
+            Assert.Equal(username, result.User.DisplayName);
 
-            _fido2Mock.Verify(x => x.RequestNewCredential(
-                It.Is<RequestNewCredentialParams>(p =>
-                    p.User.Name == username &&
-                    p.User.DisplayName == username &&
-                    p.User.Id.SequenceEqual(Encoding.UTF8.GetBytes(userId))
-                )), Times.Once);
+            Assert.True(result.User.Id.Length >= 16);
+
+            Assert.NotNull(result.Challenge);
+            Assert.NotEmpty(result.Challenge);
+
+            Assert.Contains(result.PubKeyCredParams,
+                x => x.Alg == COSE.Algorithm.ES256);
+
+            Assert.Contains(result.PubKeyCredParams,
+                x => x.Alg == COSE.Algorithm.RS256);
         }
 
         [Fact]
-        public async Task CompleteRegistrationAsync_Should_Save_Credential_And_Return_True()
+        public async Task CompleteRegistrationAsync_Should_Throw_With_Invalid_Attestation()
         {
             // Arrange
-            var userId = "123";
+            var service = CreateService();
+
+            var userId = "1234567890123456";
             var username = "dimitar";
-            var originalOptions = CreateValidCredentialCreateOptions(userId, username);
 
-            var attestationResponse = new AuthenticatorAttestationRawResponse();
+            var originalOptions = await service
+                .GenerateRegistrationOptionsAsync(userId, username);
 
-            var credentialId = new byte[] { 10, 20, 30 };
-            var publicKey = new byte[] { 1, 2, 3 };
-
-            var fidoResult = new RegisteredPublicKeyCredential()
+            var attestationResponse = new AuthenticatorAttestationRawResponse
             {
-                Id = credentialId,
-                PublicKey = publicKey,
-                SignCount = 5,
+                RawId = new byte[] { 1, 2, 3, 4 },
+                Id = "AQIDBA",
                 Type = PublicKeyCredentialType.PublicKey
             };
 
-            _fido2Mock
-                .Setup(x => x.MakeNewCredentialAsync(
-                    It.IsAny<MakeNewCredentialParams>(),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(fidoResult);
+            // Act & Assert
+            await Assert.ThrowsAsync<Fido2VerificationException>(async () =>
+            {
+                await service.CompleteRegistrationAsync(
+                    userId,
+                    attestationResponse,
+                    originalOptions);
+            });
 
-            // Act
-            var result = await _service.CompleteRegistrationAsync(
-                userId,
-                attestationResponse,
-                originalOptions);
-
-            // Assert
-            Assert.True(result);
-
-            var savedCredential = context.WebAuthnCredentials.FirstOrDefault();
-
-            Assert.NotNull(savedCredential);
-            Assert.Equal(userId, savedCredential.UserId);
-            Assert.True(savedCredential.CredentialId.SequenceEqual(credentialId));
-            Assert.True(savedCredential.PublicKey.SequenceEqual(publicKey));
-            Assert.Equal(5u, savedCredential.SignatureCounter);
-
-            _fido2Mock.Verify(x => x.MakeNewCredentialAsync(
-                It.IsAny<MakeNewCredentialParams>(),
-                It.IsAny<CancellationToken>()),
-                Times.Once);
+            Assert.Empty(context.WebAuthnCredentials);
         }
 
-        private CredentialCreateOptions CreateValidCredentialCreateOptions(string userId, string username)
+        [Fact]
+        public void GetCredentialsForUser_Should_Return_AssertionOptions_With_AllowCredentials()
         {
-            return new CredentialCreateOptions
+            // Arrange
+            var service = CreateService();
+            var userId = "123";
+
+            context.WebAuthnCredentials.Add(new WebAuthnCredential
             {
-                User = new Fido2User()
-                {
-                    Id = Encoding.UTF8.GetBytes(userId),
-                    Name = username,
-                    DisplayName = username,
-                },
-                Rp = new PublicKeyCredentialRpEntity("test", "localhost"),
-                PubKeyCredParams = new List<PubKeyCredParam>
-                {
-                    new PubKeyCredParam(COSE.Algorithm.ES256,PublicKeyCredentialType.PublicKey)
-                },
-                Challenge = new byte[] { 1, 2, 3 }
+                UserId = userId,
+                CredentialId = new byte[] { 1, 2, 3 },
+                PublicKey = new byte[] { 10, 20, 30 },
+                SignatureCounter = 0,
+                CredType = "public-key",
+                CreatedOn = DateTime.UtcNow
+            });
+
+            context.SaveChanges();
+
+            // Act
+            var options = service.GetCredentialsForUser(userId);
+
+            // Assert
+            Assert.NotNull(options);
+            Assert.NotNull(options.AllowCredentials);
+            Assert.Single(options.AllowCredentials);
+
+            var descriptor = options.AllowCredentials.First();
+            Assert.Equal(new byte[] { 1, 2, 3 }, descriptor.Id);
+        }
+
+        [Fact]
+        public async Task GetCredentialById_Should_Return_Null_When_Credential_Not_Found()
+        {
+            // Arrange
+            var service = CreateService();
+
+            var assertionResponse = new AuthenticatorAssertionRawResponse
+            {
+                RawId = new byte[] { 1, 2, 3 }
             };
+
+            // Act
+            var result = await service.GetCredentialById(assertionResponse, "{}");
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetCredentialById_Should_Throw_When_Challenge_Is_Null()
+        {
+            // Arrange
+            var service = CreateService();
+
+            var credentialId = new byte[] { 1, 2, 3 };
+
+            context.WebAuthnCredentials.Add(new WebAuthnCredential
+            {
+                UserId = "123",
+                CredentialId = credentialId,
+                PublicKey = new byte[] { 10, 20 },
+                SignatureCounter = 1,
+                CredType = "public-key",
+                CreatedOn = DateTime.UtcNow
+            });
+
+            context.SaveChanges();
+
+            var assertionResponse = new AuthenticatorAssertionRawResponse
+            {
+                RawId = credentialId
+            };
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                service.GetCredentialById(assertionResponse, null));
+
+            Assert.Equal("Assertion session expired", ex.Message);
+        }
+
+        [Fact]
+        public async Task GetCredentialById_Should_Not_Update_Counter_When_Assertion_Fails()
+        {
+            // Arrange
+            var service = CreateService();
+            var credentialId = new byte[] { 1, 2, 3 };
+            context.WebAuthnCredentials.Add(new WebAuthnCredential
+            {
+                UserId = "123",
+                CredentialId = credentialId,
+                PublicKey = new byte[] { 10, 20 },
+                SignatureCounter = 1,
+                CredType = "public-key",
+                CreatedOn = DateTime.UtcNow
+            });
+
+            context.SaveChanges();
+
+            var assertionResponse = new AuthenticatorAssertionRawResponse
+            {
+                RawId = credentialId
+            };
+
+            var fakeChallenge = "{}";
+            try
+            {
+                await service.GetCredentialById(assertionResponse, fakeChallenge);
+            }
+            catch
+            {
+            }
+
+            // Assert – counter не трябва да се е променил
+            var credential = context.WebAuthnCredentials.First();
+            Assert.Equal(1L, credential.SignatureCounter);
+        }
+
+        private WebAuthnService CreateService()
+        {
+            var fido2Config = new Fido2Configuration
+            {
+                ServerDomain = "localhost",
+                ServerName = "Test Server",
+                Origins = new HashSet<string> { "https://localhost:44320" },
+            };
+
+            var fido2 = new Fido2(fido2Config);
+
+            return new WebAuthnService(context, fido2);
         }
     }
 }
